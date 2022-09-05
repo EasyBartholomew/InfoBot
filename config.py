@@ -1,0 +1,3 @@
+API_TOKEN = "TOKEN"
+
+ARGS_SEPARATORS = [',', '\n']
