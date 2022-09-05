@@ -1,3 +1,5 @@
+import asyncio
+
 from aiogram import *
 from py_linq import Enumerable
 from misc import bot, dp
@@ -5,6 +7,10 @@ from aiogram.types import ChatType, ChatMemberStatus, Message
 from text import get_text_args
 from ext import ExtendedMessage
 from commands import get_allowed_commands, ExtendedBotCommand
+
+
+def get_extended_command(name: str) -> ExtendedBotCommand:
+    return Enumerable(get_allowed_commands()).first(lambda com: com.name == name)
 
 
 def is_allowed_chat(command: ExtendedBotCommand, chat_type: ChatType) -> bool:
@@ -37,9 +43,10 @@ async def check_ability_to_execute(command: ExtendedBotCommand, message: Message
 
 @dp.message_handler(commands=["start"])
 async def handle_start(message: ExtendedMessage):
-    this_command = Enumerable(get_allowed_commands()).first(lambda com: com.name == "start")
+    this_command = get_extended_command("start")
+
     if not await check_ability_to_execute(this_command, message):
-        await message.reply("Данная команда не может быть использована")
+        await message.reply("Данная команда не может быть использована!")
         return
 
     await message.reply("Работа начата!")
@@ -72,7 +79,7 @@ async def handle_help(message: ExtendedMessage) -> None:
     this_command = allowed_commands.first(lambda com: com.name == "help")
 
     if not await check_ability_to_execute(this_command, message):
-        await message.reply("Данная команда не может быть использована")
+        await message.reply("Данная команда не может быть использована!")
         return
 
     args = get_text_args(message.get_args())
@@ -103,3 +110,27 @@ async def handle_help(message: ExtendedMessage) -> None:
             supported_commands_text += f"/{command.name}\n"
 
         await message.reply(supported_commands_text)
+
+
+@dp.message_handler(commands=["send_after"])
+async def handle_send_after(message: ExtendedMessage):
+    this_command = get_extended_command("send_after")
+
+    if not await check_ability_to_execute(this_command, message):
+        await message.reply("Данная команда не может быть использована!")
+        return
+
+    args = get_text_args(message.get_args())
+
+    if len(args) != 2:
+        await message.reply("Команда требует два обязательных аргумента сообщение и количество времени в секундах!")
+        return
+
+    try:
+        delay = int(args[1])
+    except ValueError:
+        await message.reply("Время задано в некорректном формате!")
+        return
+
+    await asyncio.sleep(delay)
+    await message.answer(args[0])

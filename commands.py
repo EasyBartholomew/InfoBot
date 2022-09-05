@@ -44,8 +44,13 @@ ALLOWED_COMMANDS = [
     ExtendedBotCommand(BotCommand("help", "получение информации о командах"),
                        "используйте данную команду для получения сведений о существующих командах\n"
                        "syntax: /help or /help command_name"),
+
     ExtendedBotCommand(BotCommand("start", "запуск бота"), "используйте данную команду для запуска бота",
-                       required_statuses=[ChatMemberStatus.ADMINISTRATOR])
+                       required_statuses=[ChatMemberStatus.ADMINISTRATOR]),
+
+    ExtendedBotCommand(BotCommand("send_after", "отправка сообщения через заданное время"),
+                       "используйте данную команду, чтобы отправить сообщение через некоторое количество секунд\n"
+                       "syntax: /send_after позвонить Иванову, 300")
 ]
 
 
