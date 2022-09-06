@@ -6,11 +6,13 @@ from misc import bot, dp
 from aiogram.types import ChatType, ChatMemberStatus, Message
 from text import get_text_args
 from ext import ExtendedMessage
-from commands import get_allowed_commands, ExtendedBotCommand
+from commands import get_allowed_commands, get_extended_command, ExtendedBotCommand
 
 
-def get_extended_command(name: str) -> ExtendedBotCommand:
-    return Enumerable(get_allowed_commands()).first(lambda com: com.name == name)
+def get_extended_command_for(handler) -> ExtendedBotCommand:
+    command_name = handler.__name__.replace("handle_", "")
+
+    return get_extended_command(command_name)
 
 
 def is_allowed_chat(command: ExtendedBotCommand, chat_type: ChatType) -> bool:
@@ -35,18 +37,43 @@ def can_execute(command: ExtendedBotCommand, chat_type: ChatType, status: ChatMe
     return is_allowed_chat(command, chat_type) and has_required_status(command, status)
 
 
-async def check_ability_to_execute(command: ExtendedBotCommand, message: Message) -> bool:
+async def on_insufficient_status(command: ExtendedBotCommand,
+                                 message: ExtendedMessage,
+                                 status: ChatMemberStatus) -> Message:
+    return await message.reply(
+        f"<b>Вы не можете использовать данную команду!</b>\n"
+        f"Команда /{command.name} доступна для пользователей, имеющих статус {command.required_statuses}.\n"
+        f"Ваш статус: <i>{status}</i>.")
+
+
+async def on_insufficient_chat(command: ExtendedBotCommand, message: ExtendedMessage):
+    # return await message.reply(f"Команда /{command.name} недоступна в диалогах типа {message.chat.type}!")
+    return await message.reply(f"К сожалению я пока недоступен в чатах типа {message.chat.type}((\n"
+                               f"Допустимые типы чатов: {command.allowed_chat_types}.")
+
+
+async def check_conditions(command: ExtendedBotCommand, message: ExtendedMessage) -> bool:
+    if message.from_user.is_bot:
+        return False
+
+    if not is_allowed_chat(command, message.chat.type):
+        await on_insufficient_chat(command, message)
+        return False
+
     member = await bot.get_chat_member(message.chat.id, message.from_user.id)
 
-    return can_execute(command, message.chat.type, member.status)
+    if not has_required_status(command, member.status):
+        await on_insufficient_status(command, message, member.status)
+        return False
+
+    return True
 
 
 @dp.message_handler(commands=["start"])
 async def handle_start(message: ExtendedMessage):
-    this_command = get_extended_command("start")
+    this_command = get_extended_command_for(handle_start)
 
-    if not await check_ability_to_execute(this_command, message):
-        await message.reply("Данная команда не может быть использована!")
+    if not await check_conditions(this_command, message):
         return
 
     await message.reply("Работа начата!")
@@ -76,10 +103,9 @@ async def handle_start(message: ExtendedMessage):
 @dp.message_handler(commands=["help"])
 async def handle_help(message: ExtendedMessage) -> None:
     allowed_commands = Enumerable(get_allowed_commands())
-    this_command = allowed_commands.first(lambda com: com.name == "help")
+    this_command = get_extended_command_for(handle_help)
 
-    if not await check_ability_to_execute(this_command, message):
-        await message.reply("Данная команда не может быть использована!")
+    if not await check_conditions(this_command, message):
         return
 
     args = get_text_args(message.get_args())
@@ -114,10 +140,9 @@ async def handle_help(message: ExtendedMessage) -> None:
 
 @dp.message_handler(commands=["send_after"])
 async def handle_send_after(message: ExtendedMessage):
-    this_command = get_extended_command("send_after")
+    this_command = get_extended_command_for(handle_send_after)
 
-    if not await check_ability_to_execute(this_command, message):
-        await message.reply("Данная команда не может быть использована!")
+    if not await check_conditions(this_command, message):
         return
 
     args = get_text_args(message.get_args())
@@ -131,6 +156,7 @@ async def handle_send_after(message: ExtendedMessage):
     except ValueError:
         await message.reply("Время задано в некорректном формате!")
         return
+    await message.answer(f"Хорошо, напомню через {delay} секунд!")
 
     await asyncio.sleep(delay)
     await message.answer(args[0])

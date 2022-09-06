@@ -1,4 +1,5 @@
 from aiogram.types import BotCommand, ChatType, ChatMemberStatus
+from py_linq import Enumerable
 
 DEFAULT_ALLOWED_CHAT_TYPES = [ChatType.GROUP, ChatType.SUPERGROUP]
 DEFAULT_REQUIRED_STATUSES = [ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR]
@@ -6,9 +7,9 @@ DEFAULT_REQUIRED_STATUSES = [ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTR
 
 class ExtendedBotCommand:
 
-    def __init__(self, bot_command: BotCommand, extended_description: str, allowed_chat_types: list = None,
+    def __init__(self, name: str, description: str, extended_description: str, allowed_chat_types: list = None,
                  required_statuses: list = None):
-        self.__bot_command = bot_command
+        self.__bot_command = BotCommand(name, description)
         self.__extended_description = extended_description
         self.__allowed_chat_types = DEFAULT_ALLOWED_CHAT_TYPES if allowed_chat_types is None else allowed_chat_types
         self.__required_statuses = required_statuses \
@@ -41,18 +42,22 @@ class ExtendedBotCommand:
 
 
 ALLOWED_COMMANDS = [
-    ExtendedBotCommand(BotCommand("help", "получение информации о командах"),
+    ExtendedBotCommand("help", "получение информации о командах",
                        "используйте данную команду для получения сведений о существующих командах\n"
                        "syntax: /help or /help command_name"),
 
-    ExtendedBotCommand(BotCommand("start", "запуск бота"), "используйте данную команду для запуска бота",
+    ExtendedBotCommand("start", "запуск бота", "используйте данную команду для запуска бота",
                        required_statuses=[ChatMemberStatus.ADMINISTRATOR]),
 
-    ExtendedBotCommand(BotCommand("send_after", "отправка сообщения через заданное время"),
+    ExtendedBotCommand("send_after", "отправка сообщения через заданное время",
                        "используйте данную команду, чтобы отправить сообщение через некоторое количество секунд\n"
-                       "syntax: /send_after позвонить Иванову, 300")
+                       "syntax: /send_after позвонить Иванову, 30 or /send_after \"\"Белый, чёрный\"\", 30")
 ]
 
 
 def get_allowed_commands() -> list:
     return ALLOWED_COMMANDS
+
+
+def get_extended_command(name: str) -> ExtendedBotCommand:
+    return Enumerable(get_allowed_commands()).first(lambda com: com.name == name)
