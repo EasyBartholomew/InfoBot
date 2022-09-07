@@ -1,6 +1,6 @@
-from structure import *
-from structure_config import get_institutes, get_studying_stages
-from text import is_none_or_whitespace
+from university.entities import *
+from structure import get_institutes, get_studying_stages
+from bot.text import is_none_or_whitespace
 from py_linq import Enumerable
 from datetime import date
 import re
@@ -12,12 +12,7 @@ class WrongPatternError(Exception):
 
 def calculate_course(admission_year: int) -> int:
     now = date.today()
-    add = 1
-
-    if admission_year != now.year and now.month < 8:
-        add = 0
-
-    return now.year - admission_year + add
+    return now.year - admission_year + (0 if now.month < 8 else 1)
 
 
 def resolve_group(group_name: str) -> ResolvedGroup:
@@ -56,7 +51,3 @@ def resolve_group(group_name: str) -> ResolvedGroup:
     course = calculate_course(2000 + int(year_str))
 
     return ResolvedGroup(group_name, institute, stage, course, number)
-
-
-while True:
-    print(resolve_group(input("Введите название группы: ")))

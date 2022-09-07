@@ -2,11 +2,11 @@ import asyncio
 
 from aiogram import *
 from py_linq import Enumerable
-from misc import bot, dp
+from bot.misc import bot, dp
 from aiogram.types import ChatType, ChatMemberStatus, Message
-from text import get_text_args
-from ext import ExtendedMessage
-from commands import get_allowed_commands, get_extended_command, ExtendedBotCommand
+from bot.text import get_text_args
+from bot.ext import ExtendedMessage
+from bot.commands import get_allowed_commands, get_extended_command, ExtendedBotCommand
 
 
 def get_extended_command_for(handler) -> ExtendedBotCommand:
