@@ -1,10 +1,7 @@
 import config
 import re
 from py_linq import Enumerable
-
-
-def is_none_or_whitespace(s: str) -> bool:
-    return s is None or re.match(r"^\s*$", s)
+from strext import is_none_or_whitespace
 
 
 def get_args_separators() -> str:

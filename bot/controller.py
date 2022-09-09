@@ -160,3 +160,23 @@ async def handle_send_after(message: ExtendedMessage):
 
     await asyncio.sleep(delay)
     await message.answer(args[0])
+
+
+@dp.message_handler(commands=["get"])
+async def handle_get(message: ExtendedMessage):
+    this_command = get_extended_command_for(handle_get)
+
+    if not await check_conditions(this_command, message):
+        return
+
+    args = get_text_args(message.get_args())
+    date_str = ""
+
+    if args:
+        if len(args) == 1:
+            date_str = args[0]
+
+    else:
+        pass
+
+    m = date_str
