@@ -1,5 +1,6 @@
 from aiogram.types import BotCommand, ChatType, ChatMemberStatus
 from py_linq import Enumerable
+from typing import List
 
 DEFAULT_ALLOWED_CHAT_TYPES = [ChatType.GROUP, ChatType.SUPERGROUP]
 DEFAULT_REQUIRED_STATUSES = [ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR]
@@ -33,11 +34,11 @@ class ExtendedBotCommand:
         return self.bot_command.description
 
     @property
-    def allowed_chat_types(self) -> list:
+    def allowed_chat_types(self) -> List[ChatType]:
         return self.__allowed_chat_types
 
     @property
-    def required_statuses(self):
+    def required_statuses(self) -> List[ChatMemberStatus]:
         return self.__required_statuses
 
 
@@ -63,7 +64,7 @@ ALLOWED_COMMANDS = [
 ]
 
 
-def get_allowed_commands() -> list:
+def get_allowed_commands() -> List[ExtendedBotCommand]:
     return ALLOWED_COMMANDS
 
 

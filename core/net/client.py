@@ -1,10 +1,11 @@
 from requests import get
 from requests.exceptions import ConnectionError
 from urllib.parse import urljoin
+from urllib.request import urlretrieve
 from bs4 import BeautifulSoup
 from bs4.element import Tag
-from py_linq import Enumerable
 from enum import Enum
+from typing import List, Dict
 import core.net.config as config
 import re
 
@@ -20,6 +21,10 @@ def download_target_page() -> str:
     return response.text
 
 
+def download_file_as(url: str, path: str):
+    urlretrieve(url, path)
+
+
 class CourseEntry:
     def __init__(self, course_name: str, links: list = None):
         self.__number = int(re.search(r"^\d", course_name.strip()).group(0))
@@ -30,7 +35,7 @@ class CourseEntry:
         return self.__number
 
     @property
-    def links(self) -> list:
+    def links(self) -> List[str]:
         return self.__links
 
 
@@ -43,32 +48,32 @@ class InstituteEntry:
 
     def __init__(self, institute_name: str, course_entries: list = None):
         self.__name = institute_name
-        self.__course_entries = course_entries if course_entries is not None else []
+        self.__courses = course_entries if course_entries is not None else []
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.__name
 
     @property
-    def course_entries(self):
-        return self.__course_entries
+    def courses(self) -> List[CourseEntry]:
+        return self.__courses
 
     def __str__(self):
-        return f"{self.name}:{len(self.course_entries)}"
+        return f"{self.name}:{len(self.courses)}"
 
 
 class ScheduleParser:
 
     def __init__(self, html: str):
         self.__html = html
-        self.__institutes_entries = None
+        self.__schedule = None
 
     @property
-    def institutes_entries(self) -> dict:
-        if self.__institutes_entries is None:
-            self.__institutes_entries = ScheduleParser.__parse_schedule(self.__html)
+    def schedule(self) -> Dict[Stage, List[InstituteEntry]]:
+        if self.__schedule is None:
+            self.__schedule = ScheduleParser.__parse_schedule(self.__html)
 
-        return self.__institutes_entries
+        return self.__schedule
 
     @staticmethod
     def __parse_institute(a: Tag) -> InstituteEntry:
@@ -76,8 +81,7 @@ class ScheduleParser:
         parent = a.parent.parent
         course_entries = {}
 
-        courses = Enumerable(parent.find_all("div", {"class": "uk-width-1-2"})) \
-            .select(lambda t: t.find("a", href=True))
+        courses = [t.find("a", href=True) for t in parent.find_all("div", {"class": "uk-width-1-2"})]
 
         for course in courses:
             course_name = course.find("div").find("div").text.strip()
@@ -90,7 +94,7 @@ class ScheduleParser:
         return InstituteEntry(name, list(course_entries.values()))
 
     @staticmethod
-    def __parse_list(li: Tag) -> list:
+    def __parse_list(li: Tag) -> List[InstituteEntry]:
         institutes = li.find_all("a", {"class": "uk-text-bold"})
         institute_entries = []
 
@@ -101,13 +105,13 @@ class ScheduleParser:
         return institute_entries
 
     @staticmethod
-    def __parse_schedule(html: str) -> dict:
+    def __parse_schedule(html: str) -> Dict[Stage, List[InstituteEntry]]:
         soup = BeautifulSoup(html, features="html.parser")
 
         tabs = soup.find("ul", {"id": "tab-content"})
         lists = tabs.find_all("li")
 
-        stages = {Stage.GENERAL: ScheduleParser.__parse_list(lists[0]),
-                  Stage.MAGISTRACY: ScheduleParser.__parse_list(lists[1])}
+        stages = {Stage.GENERAL: list(filter(lambda inst: inst.courses, ScheduleParser.__parse_list(lists[0]))),
+                  Stage.MAGISTRACY: list(filter(lambda inst: inst.courses, ScheduleParser.__parse_list(lists[1])))}
 
         return stages

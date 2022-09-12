@@ -2,6 +2,7 @@ from university.entities import Institute, StudyingStageEntity, TimeUnitEntity, 
 from enum import Enum
 from datetime import time
 from py_linq import Enumerable
+from typing import List
 
 INSTITUTES = [
 
@@ -25,11 +26,11 @@ class StudyingStage(Enum):
     UNKNOWN = StudyingStageEntity("Неизвестно", "")
 
 
-def get_institutes() -> list:
+def get_institutes() -> List[Institute]:
     return INSTITUTES
 
 
-def get_studying_stages() -> list:
+def get_studying_stages() -> List[Institute]:
     return [stage.value for stage in StudyingStage]
 
 
