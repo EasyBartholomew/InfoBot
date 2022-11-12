@@ -1,7 +1,6 @@
-from requests import get
+from requests import get, Response
 from requests.exceptions import ConnectionError
 from urllib.parse import urljoin
-from urllib.request import urlretrieve
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 from enum import Enum
@@ -10,19 +9,19 @@ import core.net.config as config
 import re
 
 
-def download_target_page() -> str:
-    url = urljoin(config.BASE_URL, config.SCHEDULE_ROUTE)
-
+def get_page(url: str) -> Response:
     response = get(url)
 
     if not response.ok:
         raise ConnectionError()
 
-    return response.text
+    return response
 
 
-def download_file_as(url: str, path: str):
-    urlretrieve(url, path)
+def get_target_page() -> str:
+    url = urljoin(config.BASE_URL, config.SCHEDULE_ROUTE)
+
+    return get_page(url).text
 
 
 class CourseEntry:
